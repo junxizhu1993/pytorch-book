@@ -65,6 +65,7 @@ def train(**kwargs):
     ])
 
     dataset = tv.datasets.ImageFolder(opt.data_path, transform=transforms)
+    #读取的路径加载图片
     dataloader = t.utils.data.DataLoader(dataset,
                                          batch_size=opt.batch_size,
                                          shuffle=True,
@@ -92,7 +93,7 @@ def train(**kwargs):
     # noises为生成网络的输入
     true_labels = t.ones(opt.batch_size).to(device)
     fake_labels = t.zeros(opt.batch_size).to(device)
-    fix_noises = t.randn(opt.batch_size, opt.nz, 1, 1).to(device)
+    fix_noises = t.randn(opt.batch_size, opt.nz, 1, 1).to(device)  #1*1*100的噪声，用于生成一个噪音图片
     noises = t.randn(opt.batch_size, opt.nz, 1, 1).to(device)
 
     errord_meter = AverageValueMeter()
@@ -106,18 +107,18 @@ def train(**kwargs):
 
             if ii % opt.d_every == 0:
                 # 训练判别器
-                optimizer_d.zero_grad()
+                optimizer_d.zero_grad() #梯度清零
                 ## 尽可能的把真图片判别为正确
-                output = netd(real_img)
-                error_d_real = criterion(output, true_labels)
-                error_d_real.backward()
+                output = netd(real_img) #真图片判别
+                error_d_real = criterion(output, true_labels) #得出损失
+                error_d_real.backward() #反向更新权重
 
                 ## 尽可能把假图片判别为错误
-                noises.data.copy_(t.randn(opt.batch_size, opt.nz, 1, 1))
-                fake_img = netg(noises).detach()  # 根据噪声生成假图
+                noises.data.copy_(t.randn(opt.batch_size, opt.nz, 1, 1)) #生成batch的判别器
+                fake_img = netg(noises).detach()  # 根据噪声生成batch张假图
                 output = netd(fake_img)
-                error_d_fake = criterion(output, fake_labels)
-                error_d_fake.backward()
+                error_d_fake = criterion(output, fake_labels) #计算假图的损失
+                error_d_fake.backward()   
                 optimizer_d.step()
 
                 error_d = error_d_fake + error_d_real
